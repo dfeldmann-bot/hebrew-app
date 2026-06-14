@@ -360,3 +360,34 @@ providers adjusted quotas through 2025–2026.
 - A friend opening the URL without the passphrase can't use it (and can't burn my free quotas).
 - I can hand the repo back to Claude Code later to add features (audio/TTS, spaced-repetition
   export to Anki, multi-device sync) without re-architecting.
+
+---
+
+## Status & what's left (branch: `build-app`)
+
+_Updated 2026-06-14. Core build is done and pushed; nothing deployed or live-tested yet._
+
+### Done (committed on `build-app`, PR not yet opened)
+- Next.js app scaffolded; the `hebrew-story-partner` artifact ported into `app/HebrewStoryPartner.jsx` (UI/RTL/palette/toggle/tap-to-explain/vocab all preserved).
+- Secure `app/api/chat/route.ts`: free-model fallback chain **Gemini → Groq → OpenRouter** (only HTTP 429 advances; other errors surface), all keys server-side, server-side system prompt, input caps (40 turns / 8k chars), 400 on bad body.
+- Security: passphrase gate (constant-time compare), per-IP rate limit (20/min) that runs **before** auth, trusted-IP derivation (`x-real-ip` / rightmost XFF). Auth extracted to `app/lib/auth.ts` as a one-file seam for future accounts.
+- Active-model indicator in the header; `localStorage` persistence (`hsp_vocab`, `hsp_messages`, `hsp_pass`); passphrase `Gate` with rejection feedback.
+- `.env.example`, README, `.gitignore` allows committing the example.
+
+### Not done / next (roughly in priority order)
+1. **Get keys + run it locally.** `cp .env.example .env.local`, set `APP_PASSPHRASE` + at least one provider key, `npm run dev`. Nothing has been run against real providers yet.
+2. **Confirm current free model IDs** from each provider's docs (defaults are best-guesses: `gemini-2.0-flash`, `llama-3.3-70b-versatile`, `meta-llama/llama-3.3-70b-instruct:free`). Override via `GEMINI_MODEL` / `GROQ_MODEL` / `OPENROUTER_MODEL` if stale.
+3. **Live-test the fallback chain** — verified by code review + build only, never a real 429. Plan suggested Playwright to simulate a Gemini rate-limit and confirm the indicator flips.
+4. **Real-device / mobile test** — only the build is verified; no phone or Playwright mobile-viewport pass run yet.
+5. **Open the PR** (`build-app` → `main`) — blocked in the build env (no `gh`/token); open via GitHub UI.
+6. **Deploy to Vercel** — set env vars in the dashboard; confirm HTTPS URL on phone.
+
+### Deliberately deferred (YAGNI until a real need)
+- **Streaming** — UI renders whole story segments; non-streaming is simpler. Add when token-by-token is wanted (note: 3 provider dialects to handle).
+- **Real auth / accounts** — only the `authenticate()` seam exists. Build a provider + login + user store only if publishing. Parked pending that decision.
+- **Cross-device sync** — `localStorage` only (per-device). Add a hosted KV/DB if sync becomes a real need.
+- **Brute-force lockout / backoff, per-user rate limits** — rate limit already bounds guessing; strong passphrase is the real defense for single-user.
+- **Accessibility pass, automated tests** — not yet done.
+
+### Known limitations
+- Rate limiter is in-memory: resets on cold start, per-instance. Fine for single-user; swap for Vercel KV if ever multi-instance.
