@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from "crypto";
+import { authenticate } from "../../lib/auth";
 
 export const runtime = "nodejs";
 
@@ -132,21 +132,9 @@ export async function POST(req: Request): Promise<Response> {
     throw e;
   }
 
-  // 2. Passphrase gate
-  const envPass = process.env.APP_PASSPHRASE;
-  if (!envPass) return Response.json({ error: "unauthorized" }, { status: 401 });
-
-  const headerPass = req.headers.get("x-app-passphrase") ?? "";
-  // SHA-256 both sides to a fixed length, then constant-time compare.
-  const envBuf = Buffer.from(
-    createHash("sha256").update(envPass).digest("hex")
-  );
-  const hdrBuf = Buffer.from(
-    createHash("sha256").update(headerPass).digest("hex")
-  );
-  if (!timingSafeEqual(envBuf, hdrBuf)) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
-  }
+  // 2. Authenticate — the single seam for adding real accounts later (app/lib/auth.ts)
+  const auth = authenticate(req);
+  if (!auth.ok) return Response.json({ error: "unauthorized" }, { status: 401 });
 
   // 3. Parse & sanitize body
   let body: Record<string, unknown>;
