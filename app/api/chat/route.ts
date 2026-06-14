@@ -50,6 +50,14 @@ Language support setting: ${supportText}${vocabText}
 Begin or continue based on the learner's message. Keep momentum and warmth.`;
 }
 
+function buildExplainPrompt() {
+  return `You give a quick gloss for ONE Hebrew word or short phrase that the learner tapped. Reply with a SHORT, concise explanation in English: the translation first, then — only if genuinely helpful — the root or part of speech in a few words. One line, ~12 words max. No story, no greeting, no follow-up question, no extra Hebrew sentence. Just the gloss.`;
+}
+
+function buildAnalyzePrompt() {
+  return `The learner tapped a Hebrew sentence to understand it in context. Reply with: first, a natural English translation of the whole sentence on one line. Then a compact word-by-word breakdown — one line per meaningful word, formatted "word — meaning" — giving each word's meaning AS USED IN THIS sentence (add a short root or grammar note only when it genuinely helps). Be concise. No story, no greeting, no follow-up question.`;
+}
+
 type Message = { role: "user" | "assistant"; content: string };
 
 interface Tier {
@@ -156,8 +164,14 @@ export async function POST(req: Request): Promise<Response> {
       }))
     : [];
 
-  // 4. Build system prompt server-side
-  const system = buildSystemPrompt(support, vocab);
+  // 4. Build system prompt server-side. "explain" mode = a tap-to-gloss popover
+  // (concise, one-off); anything else = the interactive story.
+  const system =
+    body.mode === "explain"
+      ? buildExplainPrompt()
+      : body.mode === "analyze"
+      ? buildAnalyzePrompt()
+      : buildSystemPrompt(support, vocab);
 
   // 5. Fallback chain
   const tiers: Tier[] = (

@@ -383,6 +383,7 @@ _Updated 2026-06-14. Core build is done and pushed; nothing deployed or live-tes
 6. **Deploy to Vercel** — set env vars in the dashboard; confirm HTTPS URL on phone.
 
 ### Deliberately deferred (YAGNI until a real need)
+- **Voice mode** — text-only today. Lazy path is the browser Web Speech API (no deps, no keys): `speechSynthesis` (`he-IL`) for read-aloud per story segment (the reliable, high-value half), and `SpeechRecognition` (`he-IL`) for speak-instead-of-type. Caveat: depends on OS/browser Hebrew voices — solid on iOS Safari/Chrome, patchy elsewhere; Hebrew recognition is rougher than TTS. Add read-aloud first.
 - **Streaming** — UI renders whole story segments; non-streaming is simpler. Add when token-by-token is wanted (note: 3 provider dialects to handle).
 - **Real auth / accounts** — only the `authenticate()` seam exists. Build a provider + login + user store only if publishing. Parked pending that decision.
 - **Cross-device sync** — `localStorage` only (per-device). Add a hosted KV/DB if sync becomes a real need.

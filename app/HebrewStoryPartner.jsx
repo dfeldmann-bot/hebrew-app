@@ -51,6 +51,8 @@ export default function HebrewStoryPartner() {
   const [showVocab, setShowVocab] = useState(false);
   const [model, setModel] = useState("gemini");
   const [hydrated, setHydrated] = useState(false);
+  const [pop, setPop] = useState(null); // tap-to-explain popover: {id, loading, text}
+  const [analysis, setAnalysis] = useState(null); // per-line sentence analysis: {id, loading, text}
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -125,9 +127,54 @@ export default function HebrewStoryPartner() {
     }
   }
 
-  function explainWord(word) {
-    send(`Explain the word "${word}" — meaning, root if useful, and a simple example. Then we can continue the story.`);
+  // Tap a word → fetch a short gloss into a popover anchored above it. Does NOT
+  // touch the conversation. `id` keys the popover to that word instance.
+  async function explainWord(word, id) {
+    if (!word) return;
+    if (pop?.id === id) { setPop(null); return; } // tap again = dismiss
+    setPop({ id, loading: true, text: "" });
+    try {
+      const pass = localStorage.getItem("hsp_pass") || "";
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-app-passphrase": pass },
+        body: JSON.stringify({ mode: "explain", messages: [{ role: "user", content: word }] }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setPop({ id, loading: false, text: (data.text || "").trim() || "—" });
+    } catch {
+      setPop({ id, loading: false, text: "—" });
+    }
   }
+
+  // Analyze a whole sentence/line → breakdown panel under the line. UI only,
+  // never added to the conversation. `id` keys the panel to that line.
+  async function analyzeSentence(text, id) {
+    if (analysis?.id === id) { setAnalysis(null); return; } // toggle off
+    setAnalysis({ id, loading: true, text: "" });
+    try {
+      const pass = localStorage.getItem("hsp_pass") || "";
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-app-passphrase": pass },
+        body: JSON.stringify({ mode: "analyze", messages: [{ role: "user", content: text }] }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setAnalysis({ id, loading: false, text: (data.text || "").trim() || "—" });
+    } catch {
+      setAnalysis({ id, loading: false, text: "—" });
+    }
+  }
+
+  // Dismiss the popover on any click outside it (word clicks stopPropagation).
+  useEffect(() => {
+    if (!pop) return;
+    const close = () => setPop(null);
+    const t = setTimeout(() => document.addEventListener("click", close), 0);
+    return () => { clearTimeout(t); document.removeEventListener("click", close); };
+  }, [pop]);
 
   function addWord() {
     const w = newWord.trim();
@@ -136,23 +183,36 @@ export default function HebrewStoryPartner() {
     setNewWord("");
   }
 
-  // Render a story segment: make Hebrew words tappable
-  function renderSegment(content) {
+  // ponytail: block direction follows whichever script has more letters; the
+  // browser's bidi algorithm then lays out the embedded opposite-script words.
+  function dominantDir(text) {
+    const heb = (text.match(/[֐-׿]/g) || []).length;
+    const lat = (text.match(/[A-Za-z]/g) || []).length;
+    return heb >= lat ? "rtl" : "ltr"; // ties → rtl (this is a Hebrew app)
+  }
+
+  // Render a story segment: make Hebrew words tappable. `mi` = message index,
+  // used to build a popover id unique across the whole conversation.
+  function renderSegment(content, mi) {
     const lines = content.split("\n");
     return lines.map((line, li) => {
       const isGloss = line.trim().startsWith("↳");
+      const isRtl = dominantDir(line) === "rtl";
       const tokens = line.split(/(\s+)/);
+      const hasHebrew = /[֐-׿]/.test(line);
+      const lineId = `L${mi}-${li}`;
+      const analyzeOpen = analysis?.id === lineId;
       return (
+        <div key={li}>
         <p
-          key={li}
-          dir={/[֐-׿]/.test(line) ? "rtl" : "ltr"}
+          dir={isRtl ? "rtl" : "ltr"}
           style={{
             margin: "0 0 0.5rem",
             fontSize: isGloss ? 14 : 17,
             lineHeight: 1.75,
             color: isGloss ? PALETTE.faint : PALETTE.ink,
             fontStyle: isGloss ? "italic" : "normal",
-            fontFamily: /[֐-׿]/.test(line)
+            fontFamily: isRtl
               ? "'Frank Ruhl Libre', 'David Libre', Georgia, serif"
               : "'Iowan Old Style', Georgia, serif",
           }}
@@ -160,20 +220,95 @@ export default function HebrewStoryPartner() {
           {tokens.map((tok, ti) => {
             const isHebrewWord = /[֐-׿]/.test(tok) && !isGloss;
             if (isHebrewWord) {
+              const id = `${mi}-${li}-${ti}`;
+              const open = pop?.id === id;
               return (
                 <span
                   key={ti}
-                  onClick={() => explainWord(tok.replace(/[^֐-׿']/g, ""))}
-                  style={{ cursor: "pointer", borderBottom: "1px dotted rgba(185,96,58,0.4)" }}
+                  onClick={(e) => { e.stopPropagation(); explainWord(tok.replace(/[^֐-׿']/g, ""), id); }}
+                  style={{
+                    position: "relative",
+                    cursor: "pointer",
+                    borderBottom: "1px dotted rgba(185,96,58,0.4)",
+                  }}
                   title="Tap to explain"
                 >
                   {tok}
+                  {open && (
+                    <span
+                      onClick={(e) => e.stopPropagation()}
+                      dir={pop.text ? dominantDir(pop.text) : "ltr"}
+                      style={{
+                        position: "absolute",
+                        bottom: "calc(100% + 6px)",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        zIndex: 20,
+                        width: "max-content",
+                        maxWidth: 220,
+                        textAlign: "left",
+                        whiteSpace: "normal",
+                        background: PALETTE.ink,
+                        color: PALETTE.paper,
+                        fontFamily: "'Iowan Old Style', Georgia, serif",
+                        fontSize: 13,
+                        lineHeight: 1.4,
+                        fontStyle: "normal",
+                        padding: "7px 10px",
+                        borderRadius: 8,
+                        boxShadow: "0 4px 14px rgba(0,0,0,0.28)",
+                        cursor: "default",
+                      }}
+                    >
+                      {pop.loading ? "…" : pop.text}
+                    </span>
+                  )}
                 </span>
               );
             }
             return <span key={ti}>{tok}</span>;
           })}
         </p>
+        {hasHebrew && !isGloss && (
+          <div style={{ textAlign: isRtl ? "right" : "left", margin: "-0.15rem 0 0.7rem" }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); analyzeSentence(line.trim(), lineId); }}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                fontFamily: "'Iowan Old Style', Georgia, serif",
+                fontSize: 12,
+                color: PALETTE.sea,
+                opacity: 0.85,
+              }}
+            >
+              {analyzeOpen ? "× close" : "⊕ analyze sentence"}
+            </button>
+            {analyzeOpen && (
+              <div
+                dir={analysis.text ? dominantDir(analysis.text) : "ltr"}
+                style={{
+                  marginTop: 6,
+                  background: PALETTE.paperDeep,
+                  border: `1px solid ${PALETTE.sand}`,
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                  fontFamily: "'Iowan Old Style', Georgia, serif",
+                  fontSize: 13.5,
+                  lineHeight: 1.55,
+                  color: PALETTE.ink,
+                  whiteSpace: "pre-wrap",
+                  textAlign: "left",
+                }}
+              >
+                {analysis.loading ? "…" : analysis.text}
+              </div>
+            )}
+          </div>
+        )}
+        </div>
       );
     });
   }
@@ -396,12 +531,12 @@ export default function HebrewStoryPartner() {
         {messages.map((m, i) =>
           m.role === "assistant" ? (
             <div key={i} style={{ marginBottom: "1.4rem" }}>
-              {renderSegment(m.content)}
+              {renderSegment(m.content, i)}
             </div>
           ) : (
             <div key={i} style={{ marginBottom: "1.4rem", textAlign: "right" }}>
               <span
-                dir={/[֐-׿]/.test(m.content) ? "rtl" : "ltr"}
+                dir={dominantDir(m.content)}
                 style={{
                   display: "inline-block",
                   background: PALETTE.sea,
