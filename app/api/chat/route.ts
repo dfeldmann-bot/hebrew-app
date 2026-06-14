@@ -114,12 +114,30 @@ async function callTier(
 }
 
 export async function POST(req: Request): Promise<Response> {
-  // 1. Passphrase gate — before anything else
+  // 1. Rate limit FIRST — so failed-auth attempts are also counted (caps
+  // passphrase brute-forcing at the per-window limit). Trust only the IP set by
+  // the platform edge: x-real-ip (Vercel) or the RIGHTMOST x-forwarded-for entry
+  // (the one the trusted proxy appended); the leftmost token is client-spoofable.
+  // ponytail: an unknown bucket is shared, which is fine for a single-user app.
+  const xff = req.headers.get("x-forwarded-for");
+  const ip =
+    req.headers.get("x-real-ip")?.trim() ||
+    (xff ? xff.split(",").pop()!.trim() : "") ||
+    "unknown";
+  try {
+    checkRateLimit(ip);
+  } catch (e) {
+    if (e instanceof RateLimitError)
+      return Response.json({ error: "rate_limited" }, { status: 429 });
+    throw e;
+  }
+
+  // 2. Passphrase gate
   const envPass = process.env.APP_PASSPHRASE;
   if (!envPass) return Response.json({ error: "unauthorized" }, { status: 401 });
 
   const headerPass = req.headers.get("x-app-passphrase") ?? "";
-  // Pad to same length before comparing to avoid length leaks
+  // SHA-256 both sides to a fixed length, then constant-time compare.
   const envBuf = Buffer.from(
     createHash("sha256").update(envPass).digest("hex")
   );
@@ -128,17 +146,6 @@ export async function POST(req: Request): Promise<Response> {
   );
   if (!timingSafeEqual(envBuf, hdrBuf)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
-  }
-
-  // 2. Rate limit
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "local";
-  try {
-    checkRateLimit(ip);
-  } catch (e) {
-    if (e instanceof RateLimitError)
-      return Response.json({ error: "rate_limited" }, { status: 429 });
-    throw e;
   }
 
   // 3. Parse & sanitize body
