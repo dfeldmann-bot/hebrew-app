@@ -1,6 +1,6 @@
 # Grammar lessons, offline — design
 
-Date: 2026-11-26 · Status: draft for owner review
+Date: 2026-11-26 · Status: approved by owner (2026-11-26)
 Mockups (clickable): https://claude.ai/artifact/VRyiDcLpDPo8C5NsrUXqCM (private to the owner)
 
 ## 1. Intent
@@ -97,9 +97,20 @@ Order follows the mockup's course map. Each binyan unit uses the active/passive 
   is the later pronunciation project.
 
 **First release scope:** the engine (all screens, games, verification, offline) plus
-**Foundations and the first three binyanim (pa'al, nif'al, pi'el)**, fully verified. Later
-units are added with the same pipeline, one unit at a time. *(Builder call, proposed by Claude;
-owner may change.)*
+**Foundations and the first three binyanim (pa'al, nif'al, pi'el)**, meeting the release bar in §8.
+Later units are added with the same pipeline, one unit at a time.
+
+- **Roots in v1:** every root the v1 lessons use, plus the 10 mockup roots (כתב, למד, ספר, גדל, דבר,
+  שמר, כנס, לבש, סגר, פתח) — roughly 30–40 roots. Each root entry covers all seven binyanim
+  (`null` where unused), so the Pattern Machine is complete even for binyanim not yet taught.
+- **Forms per binyan:** the principal parts only — past 3rd masc. sing., present masc. sing.,
+  future 3rd masc. sing., infinitive (passives: what exists). Lesson texts may use other persons;
+  those forms live in the lesson and are verified there. Games drill these principal parts plus
+  the forms that appear in lessons.
+- **Weak roots:** v1 lessons use regular roots for the pattern being taught; a weak root that
+  appears (e.g. חכה) is flagged with a short note pointing to the weak-roots side track.
+- **Side tracks and mixed review:** shown on the course map as locked "coming later"; no content in v1.
+  Links from the Pattern Machine to lessons that don't exist yet show as locked.
 
 ## 6. What the learner sees
 
@@ -179,6 +190,11 @@ A repeatable pipeline, run by Claude Code at authoring time (never at app runtim
    the Hebrew Language; open-licensed grammar pages/PDFs it finds may be cited as supporting sources),
    and sets `verified` / `ai-checked` / `unverified` with sources and notes. It reports conflicts.
 5. **Fix loop** — conflicts go back to drafting; repeat until no conflicts.
+
+**Release bar (owner decision):** the grammar core must be `verified` — every verb/noun form,
+root assignment and binyan label. A core item no source confirms is **removed** from the lesson
+(not shipped as unverified). Meanings, family words, frequency bands, example sentences and
+explanations may ship as `ai-checked` or `unverified`, with the marker shown.
 6. **Content tests** — a test suite fails the build if any content file is malformed, references a
    missing root/form, has a conflict, or lacks a `verify` block.
 
@@ -194,6 +210,9 @@ the content, so the owner can see quality at a glance.
 - Progress (lesson status, stars, points, daily streak, game history) is stored on the device in
   `localStorage` under new `hsp_`-prefixed keys, alongside the existing vocab keys. Reads/writes are
   guarded; losing it is annoying, not fatal.
+- **Where it runs:** on the owner's own computer, started locally (production build served on
+  `localhost`). Service workers work on `localhost`, so no deployment or HTTPS is needed for v1.
+  Phone install comes later, with a deploy.
 - The passphrase gate stays as is (it works offline once the passphrase is stored). Lesson files
   themselves are not secret; the gate exists to protect AI quota.
 
@@ -205,7 +224,9 @@ the content, so the owner can see quality at a glance.
   frequency. Root Hunt connects to lessons and patterns.
 - No human reviewer: the app marks unverified content; a dedicated checker agent verifies against
   online sources; scraping is used to find sources.
-- Works without AI and without internet.
+- Works without AI and without internet, on the owner's computer (localhost) for v1.
+- Release bar: option A (grammar core verified or removed; the rest may ship marked).
+- Approved the calls in §11 and the v1 root/form scope in §5.
 
 ## 11. Calls made by Claude (owner can change)
 
@@ -219,7 +240,9 @@ the content, so the owner can see quality at a glance.
 ## 12. Left to the builder
 
 - Routing/page structure for the Lessons area; component breakdown; styling details within the palette.
-- Service worker approach (hand-written vs. a library), as long as it works with the Next.js 16 build.
+- Service worker approach (hand-written vs. a library), as long as it works with the Next.js 16
+  production build on localhost.
+- Build order: the AI selector is already merged (Vitest, `/api/models`, offline banner exist).
 - Exact JSON schema field names and file naming; the content test runner (Vitest is being added by
   the AI selector work).
 - How the verification script indexes the Wiktionary data.
