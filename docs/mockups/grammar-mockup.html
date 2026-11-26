@@ -1,0 +1,474 @@
+<title>Shoresh Grammar Mockups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Frank+Ruhl+Libre:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Layout: one column "notebook" with a tab strip; each tab is one screen of the proposed grammar section. Palette taken from the existing app. */
+:root{
+  --paper:#f4ece0; --paper-deep:#e9ddc9; --card:#fbf6ee; --ink:#1a1614; --faint:#6e6358;
+  --clay:#b9603a; --clay-soft:#f0d6c8; --sea:#206b6b; --sea-soft:#d3e6e3; --gold:#c8922a; --gold-soft:#f3e2bd;
+  --line:#d8c5a6; --good:#2f7a3f; --bad:#a83a2a;
+  --f-he:'Frank Ruhl Libre','Times New Roman',serif;
+  --f-display:'Amatic SC','Comic Sans MS',cursive;
+  --f-body:'Source Serif 4',Georgia,serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#1c1916; --paper-deep:#26221d; --card:#2a2520; --ink:#efe6d8; --faint:#a89b8a;
+  --clay:#e08a62; --clay-soft:#4a2e22; --sea:#5fb3ad; --sea-soft:#1f3a38; --gold:#e0b35a; --gold-soft:#463a20;
+  --line:#4a4036; --good:#6cc07c; --bad:#ec7f6c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#1c1916; --paper-deep:#26221d; --card:#2a2520; --ink:#efe6d8; --faint:#a89b8a;
+  --clay:#e08a62; --clay-soft:#4a2e22; --sea:#5fb3ad; --sea-soft:#1f3a38; --gold:#e0b35a; --gold-soft:#463a20;
+  --line:#4a4036; --good:#6cc07c; --bad:#ec7f6c; color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:var(--f-display);font-size:2.6rem;line-height:1;margin:0;color:var(--clay)}
+h2{font-family:var(--f-display);font-size:2rem;margin:0 0 4px;line-height:1.1;text-wrap:balance}
+h3{font-size:1rem;margin:0 0 6px}
+.lead{color:var(--faint);margin:4px 0 16px;max-width:62ch}
+.he{font-family:var(--f-he);direction:rtl}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 20px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--paper);padding-block:8px;z-index:5;border-bottom:1px solid var(--line)}
+.tab{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:999px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tab:focus-visible,button:focus-visible{outline:2px solid var(--sea);outline-offset:2px}
+.note{font-size:.85rem;color:var(--faint);border-left:3px solid var(--gold);padding:4px 10px;margin:14px 0;background:var(--gold-soft);border-radius:0 6px 6px 0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{font:inherit;font-size:.88rem;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:8px;cursor:pointer}
+.btn.on{background:var(--sea);color:var(--paper);border-color:var(--sea)}
+.btn.primary{background:var(--clay);border-color:var(--clay);color:var(--paper)}
+
+/* course map */
+.compass{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0 18px}
+.pair{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card)}
+.pair .he{font-size:1.25rem}
+.pair small{display:block;color:var(--faint)}
+.track{display:flex;flex-direction:column;gap:0;margin:8px 0}
+.stop{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;padding:8px 0}
+.dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:600;border:2px solid var(--line);background:var(--card);font-size:.8rem}
+.stop.done .dot{background:var(--sea);border-color:var(--sea);color:var(--paper)}
+.stop.cur .dot{background:var(--clay);border-color:var(--clay);color:var(--paper)}
+.stop.lock{opacity:.55}
+.stop .he{font-size:1.3rem;font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{font-size:.78rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--faint)}
+.chip.done{border-color:var(--sea);color:var(--sea)}
+.chip.cur{border-color:var(--clay);color:var(--clay);font-weight:600}
+.side{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+
+/* reading */
+.article{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.article .src{font-size:.78rem;color:var(--faint);margin-bottom:8px}
+.sent{margin:0 0 12px}
+.sent .he{font-size:1.45rem;line-height:1.9}
+.w{cursor:default}
+.v{background:var(--clay-soft);border-bottom:2px solid var(--clay);border-radius:3px;padding:0 2px;cursor:pointer}
+.v:hover,.v.sel{background:var(--clay);color:var(--paper)}
+.tr{font-size:.88rem;color:var(--faint);direction:ltr}
+.card{margin-top:12px;background:var(--paper-deep);border-radius:10px;padding:14px;border:1px solid var(--line)}
+.card .big{font-size:2rem;font-family:var(--f-he)}
+.rl{color:var(--clay);font-weight:700}
+.slot{display:inline-flex;gap:4px;direction:rtl;font-family:var(--f-he);font-size:1.6rem;align-items:baseline}
+.slot b{color:var(--clay)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:.9rem;margin:8px 0}
+.kv dt{color:var(--faint)}
+.kv dd{margin:0}
+.fam{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.fam span{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:.85rem}
+.fam .he{font-size:1.1rem}
+.soundalike{margin-top:10px;font-size:.88rem;background:var(--sea-soft);border-radius:8px;padding:8px 10px}
+.pattern-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}
+
+/* games */
+.hud{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--faint);margin-bottom:10px;font-variant-numeric:tabular-nums}
+.hud b{color:var(--ink);font-size:1.05rem}
+.xp{height:8px;background:var(--paper-deep);border-radius:99px;overflow:hidden;flex:1;min-width:120px;align-self:center}
+.xp i{display:block;height:100%;background:var(--gold);width:0;transition:width .3s}
+.game{text-align:center}
+.target{font-family:var(--f-he);font-size:2.6rem;direction:rtl;margin:4px 0}
+.gloss{color:var(--faint);font-size:.9rem;margin-bottom:12px}
+.tiles{display:flex;gap:8px;justify-content:center;direction:rtl;flex-wrap:wrap;margin:10px 0}
+.tile{font-family:var(--f-he);font-size:1.9rem;width:56px;height:62px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+.tile.picked{background:var(--clay);border-color:var(--clay);color:var(--paper)}
+.tile.ok{background:var(--good);border-color:var(--good);color:var(--paper)}
+.tile.no{animation:shake .3s;border-color:var(--bad)}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@media (prefers-reduced-motion:reduce){.tile.no{animation:none}.xp i{transition:none}}
+.answer{min-height:2.2em;font-family:var(--f-he);font-size:1.6rem;direction:rtl;letter-spacing:.2em}
+.feedback{min-height:3em;font-size:.92rem}
+.feedback.good{color:var(--good)}
+.feedback.bad{color:var(--bad)}
+
+.roots{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.roots .btn{font-family:var(--f-he);font-size:1.15rem;direction:rtl}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:600}
+td.form{font-family:var(--f-he);font-size:1.5rem;direction:rtl;text-align:right;white-space:nowrap}
+td.tpl{font-family:var(--f-he);font-size:1.15rem;direction:rtl;text-align:right;color:var(--faint);white-space:nowrap}
+td.none{color:var(--faint);font-size:.85rem}
+.bn{font-family:var(--f-he);font-size:1.15rem}
+.voice{font-size:.75rem;color:var(--faint)}
+.r1{color:var(--clay)} .r2{color:var(--sea)} .r3{color:var(--gold)}
+
+.fq{display:inline-block;font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:999px;font-weight:600;vertical-align:middle}
+.fq.s{background:var(--sea-soft);color:var(--sea)}
+.fq.w{background:var(--gold-soft);color:var(--gold)}
+.fq.r{background:var(--paper-deep);color:var(--faint)}
+.ex{font-size:.86rem;margin-top:4px}
+.ex .he{font-size:1.1rem;display:block}
+.ex .en{color:var(--faint)}
+.warn{font-size:.82rem;margin-top:5px;color:var(--clay)}
+td.mean{min-width:220px}
+.traps{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.trap{background:var(--clay-soft);border-radius:8px;padding:8px 10px;font-size:.88rem}
+.trap .he{font-size:1.05rem}
+.links{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.82rem;color:var(--faint);margin-bottom:10px}
+.picks{display:flex;flex-direction:column;gap:8px}
+.pick{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer}
+.pick input{margin-top:4px;accent-color:var(--clay)}
+.pick small{display:block;color:var(--faint)}
+textarea{width:100%;font:inherit;font-size:.85rem;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;min-height:90px;box-sizing:border-box}
+</style>
+
+<div class="wrap">
+  <h1>שורש · Grammar mockups</h1>
+  <p class="lead">Five screens from the proposed grammar section, which works offline with no AI. The two games work, so try them. Then use the last tab to tell me what to keep.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="map" aria-selected="true">1 · Course map</button>
+    <button class="tab" role="tab" data-tab="read" aria-selected="false">2 · Lesson text</button>
+    <button class="tab" role="tab" data-tab="hunt" aria-selected="false">3 · Root Hunt</button>
+    <button class="tab" role="tab" data-tab="machine" aria-selected="false">4 · Pattern Machine</button>
+    <button class="tab" role="tab" data-tab="pick" aria-selected="false">5 · Your picks</button>
+  </div>
+
+  <!-- 1 MAP -->
+  <section id="map">
+    <h2>The binyan path</h2>
+    <p class="lead">The seven binyanim come in active and passive pairs. If you learn them as pairs, each new binyan reuses what you already know.</p>
+    <div class="compass">
+      <div class="pair"><span class="he">פָּעַל ↔ נִפְעַל</span><small>basic action ↔ passive / happens to you</small></div>
+      <div class="pair"><span class="he">פִּעֵל ↔ פֻּעַל</span><small>intensive or "do to" ↔ its passive</small></div>
+      <div class="pair"><span class="he">הִפְעִיל ↔ הֻפְעַל</span><small>cause someone to ↔ be caused</small></div>
+      <div class="pair"><span class="he">הִתְפַּעֵל</span><small>reflexive / to each other / oneself</small></div>
+    </div>
+    <div class="track" id="track"></div>
+    <h3 style="margin-top:18px">Side tracks (unlock as you go)</h3>
+    <div class="side">
+      <div class="pair"><b>Noun patterns</b><small class="he" style="font-size:1.05rem">מִקְטָל · קַטָּל · תַּקְטִיל · קְטִילָה</small><small>e.g. מִכְתָּב, מִשְׂרָד, נַהָג, תַּלְמִיד</small></div>
+      <div class="pair"><b>Little words with endings</b><small class="he" style="font-size:1.05rem">לִי · לְךָ · שֶׁלִּי · אִתּוֹ · מִמֶּנִּי</small><small>one pattern repeated across prepositions</small></div>
+      <div class="pair"><b>Weak roots</b><small>roots ending in ה, roots starting with נ or י, roots with ו/י in the middle: the "exceptions" that follow their own patterns</small></div>
+    </div>
+  </section>
+
+  <!-- 2 READING -->
+  <section id="read" hidden>
+    <h2>Pi'el · present tense</h2>
+    <p class="lead">A short text about everyday life. All the highlighted verbs follow one pattern. Tap one to see its root, the pattern it fits, and its word family.</p>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn on" id="tgNiqqud">Vowels on verbs</button>
+      <button class="btn on" id="tgTr">English lines</button>
+    </div>
+    <div class="article">
+      <div class="src">Adapted from a news topic: Tel Aviv's light rail · written for this lesson</div>
+      <div id="sents"></div>
+    </div>
+    <div class="card" id="vcard"><span style="color:var(--faint)">Tap a highlighted verb ↑</span></div>
+    <div class="pattern-box">
+      <div class="panel">
+        <h3>The pattern you just saw</h3>
+        <div class="slot">מְ <b>□</b>ַ <b>□</b>ֵּ <b>□</b></div>
+        <p style="font-size:.88rem;margin:6px 0 0">Pi'el present, masculine: <b>מְ</b> + root letter 1 with "a" + root letter 2 <i>doubled</i> with "e" + root letter 3. Feminine adds <span class="he">ֶת</span>: <span class="he">מְדַבֶּרֶת</span>.</p>
+      </div>
+      <div class="panel">
+        <h3>How to spot it without vowels</h3>
+        <p style="font-size:.88rem;margin:0">Present-tense pi'el usually looks like <b>מ + 3 letters</b>: <span class="he">מדבר, מספר, משלם</span>. Pa'al present has a <b>ו</b> after the first letter instead: <span class="he">כותב, לומד</span>.</p>
+      </div>
+    </div>
+    <div class="note">After the reading come practice rounds (next two tabs) using these same roots, then a 5-question check before the next lesson unlocks.</div>
+  </section>
+
+  <!-- 3 ROOT HUNT -->
+  <section id="hunt" hidden>
+    <h2>Root Hunt</h2>
+    <p class="lead">Tap the three root letters, in order. The other letters are pattern letters added around the root. A streak doubles your points. Each solved word opens its root in the Pattern Machine and links to the lesson where it appears.</p>
+    <div class="panel game">
+      <div class="hud"><span>Score <b id="hScore">0</b></span><span>Streak <b id="hStreak">0</b></span><span>Word <b id="hNum">1</b>/<span id="hTot"></span></span><span class="xp"><i id="hXp"></i></span></div>
+      <div class="target" id="hWord"></div>
+      <div class="gloss" id="hGloss"></div>
+      <div class="tiles" id="hTiles"></div>
+      <div class="answer" id="hAns"></div>
+      <div class="feedback" id="hFb"></div>
+      <div class="links" id="hLinks"></div>
+      <div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="hClear">Clear</button><button class="btn primary" id="hNext" hidden>Next word →</button></div>
+    </div>
+  </section>
+
+  <!-- 4 PATTERN MACHINE -->
+  <section id="machine" hidden>
+    <h2>Pattern Machine</h2>
+    <p class="lead">Pick a root and see it in each binyan. The root letters stay the same colour, so the pattern letters around them are easy to see. "—" means Hebrew doesn't use that combination. Spotting those gaps is part of learning.</p>
+    <div class="roots" id="roots"></div>
+    <div class="legend"><span><span class="fq s">speech</span> common in everyday talk</span><span><span class="fq w">written</span> mostly news, signs, formal</span><span><span class="fq r">rare</span> you'll seldom meet it</span></div>
+    <div class="panel tablewrap"><table><thead><tr><th>Binyan</th><th>Past (he)</th><th>Meaning · in context</th></tr></thead><tbody id="mBody"></tbody></table></div>
+    <h3 style="margin-top:16px">Watch out with this root</h3>
+    <div class="traps" id="mTraps"></div>
+    <h3 style="margin-top:16px">Same root, other words</h3>
+    <div class="fam" id="mFam"></div>
+    <div class="links" id="mLesson" style="justify-content:flex-start"></div>
+    <div class="note">The frequency labels here are my estimates for the mockup. In the app they'd come from word-frequency lists: film subtitles for speech, news and Wikipedia for writing. In the real app this also becomes a game: you see a meaning ("was extradited"), pick the binyan, and the word builds itself.</div>
+  </section>
+
+  <!-- 5 PICKS -->
+  <section id="pick" hidden>
+    <h2>What should go in?</h2>
+    <p class="lead">Tick what you'd actually use. Then copy the summary and paste it into our chat.</p>
+    <div class="picks" id="picks"></div>
+    <p style="margin:14px 0 6px">Anything you'd change, or a game idea of your own?</p>
+    <textarea id="pNote" placeholder="e.g. more texts per lesson, a timer in Root Hunt…"></textarea>
+    <div class="row" style="margin-top:10px"><button class="btn primary" id="pCopy">Copy summary</button><span id="pMsg" style="font-size:.85rem;color:var(--faint)"></span></div>
+    <textarea id="pOut" readonly hidden></textarea>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const MARKS=/[֑-ׇ]/g;
+const FINAL={'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ'};
+const norm=c=>FINAL[c]||c;
+function graphemes(w){const out=[];for(const ch of w){if(/[֑-ׇ]/.test(ch)&&out.length)out[out.length-1]+=ch;else out.push(ch);}return out;}
+// mark root letters (greedy left-to-right match); returns html
+function colorRoot(word,root){const g=graphemes(word);let i=0;return g.map(x=>{const base=norm(x.replace(MARKS,'').replace(/[ׁׂ]/g,''));if(i<root.length&&base===root[i]){i++;return `<span class="r${i}">${x}</span>`;}return x;}).join('');}
+
+/* tabs */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
+  document.querySelectorAll('section').forEach(s=>s.hidden=s.id!==t.dataset.tab);
+});
+
+/* 1 map */
+const TRACK=[
+  ['פָּעַל','Pa\'al','done',['present','past','future','infinitive','compare']],
+  ['נִפְעַל','Nif\'al','done',['present','past','future','pa\'al vs nif\'al']],
+  ['פִּעֵל','Pi\'el','cur',['present','past','future','pa\'al vs pi\'el']],
+  ['פֻּעַל','Pu\'al','lock',['present','past','pi\'el vs pu\'al']],
+  ['הִפְעִיל','Hif\'il','lock',['present','past','future','infinitive','compare']],
+  ['הֻפְעַל','Huf\'al','lock',['present','past','hif\'il vs huf\'al']],
+  ['הִתְפַּעֵל','Hitpa\'el','lock',['present','past','future','the ת swap','compare']],
+  ['🧩','Mixed review','lock',['spot the binyan','one root, 5 binyanim','article challenge']],
+];
+$('#track').innerHTML=TRACK.map((t,i)=>`<div class="stop ${t[2]}"><div class="dot">${t[2]==='done'?'✓':i+1}</div><div><span class="he">${t[0]}</span> <span style="color:var(--faint)">${t[1]}</span><div class="chips">${t[3].map((c,j)=>`<span class="chip ${t[2]==='done'?'done':(t[2]==='cur'&&j===0?'cur':'')}">${c}</span>`).join('')}</div></div></div>`).join('');
+
+/* 2 reading */
+const V={
+  'מְחַפֵּשׂ':{root:'חפש',rootTxt:'ח־פ־שׂ',form:'present · masculine singular',mean:'is looking for, searches',fam:[['חִפּוּשׂ','a search'],['חִפֵּשׂ','he searched'],['תַּחְפֹּשֶׂת','costume (a "disguise")']],sound:'Similar sound, different root: <span class="he">חֹפֶשׁ</span> (vacation) is ח־פ־<b>שׁ</b> with shin. The dot on the ש tells them apart.'},
+  'מְדַבֶּרֶת':{root:'דבר',rootTxt:'ד־ב־ר',form:'present · feminine singular',mean:'is speaking, talks',fam:[['דִּבֵּר','he spoke'],['דִּבּוּר','speech'],['דָּבָר','thing, word'],['דּוֹבֵר','spokesperson']]},
+  'מְסַפֶּרֶת':{root:'ספר',rootTxt:'ס־פ־ר',form:'present · feminine singular',mean:'is telling (a story)',fam:[['סִפּוּר','story'],['סֵפֶר','book'],['מִסְפָּר','number'],['סִפְרִיָּה','library']],sound:'The same root in pa\'al means "to count": <span class="he">סוֹפֵר</span>. The binyan changes the meaning.'},
+  'מְבַקֵּשׁ':{root:'בקש',rootTxt:'ב־ק־שׁ',form:'present · masculine singular',mean:'asks for, requests',fam:[['בַּקָּשָׁה','a request'],['בִּקֵּשׁ','he asked for'],['מְבֻקָּשׁ','wanted, in demand (pu\'al)']],sound:'<span class="he">לְבַקֵּשׁ</span> = ask <i>for</i> something · <span class="he">לִשְׁאֹל</span> = ask a question.'},
+  'מְשַׁלֵּם':{root:'שלמ',rootTxt:'ש־ל־ם',form:'present · masculine singular',mean:'pays',fam:[['תַּשְׁלוּם','payment'],['שָׁלֵם','whole, complete'],['שָׁלוֹם','peace, hello'],['לְהַשְׁלִים','to complete (hif\'il)']]},
+  'מְחַכֶּה':{root:'חכה',rootTxt:'ח־כ־ה',form:'present · masculine singular',mean:'waits',fam:[['חִכָּה','he waited'],['לְחַכּוֹת','to wait']],sound:'Weak root: when the root ends in ה, the last letter becomes <span class="he">ֶה</span>, not the usual pattern. Also, <b>ח</b> and <b>כ</b> sound the same in modern Hebrew, so only the spelling shows which one is in the root.'},
+};
+const S=[
+  ['בבוקר אני {מְחַפֵּשׂ} את התחנה של הרכבת הקלה.','In the morning I look for the light rail station.'],
+  ['אישה אחת {מְדַבֶּרֶת} בטלפון ו{מְסַפֶּרֶת} לחברה שלה על העבודה.','A woman is talking on the phone and telling her friend about work.'],
+  ['הנהג {מְבַקֵּשׁ} מכולם לזוז פנימה.','The driver asks everyone to move inside.'],
+  ['אני {מְשַׁלֵּם} עם הכרטיס ו{מְחַכֶּה} בסבלנות.','I pay with the card and wait patiently.'],
+];
+let niq=true,showTr=true,selV=null;
+function renderSents(){
+  $('#sents').innerHTML=S.map(([he,en])=>`<div class="sent"><div class="he">${he.replace(/\{(.+?)\}/g,(_,w)=>`<span class="v${selV===w?' sel':''}" data-v="${w}">${niq?w:w.replace(MARKS,'')}</span>`)}</div>${showTr?`<div class="tr">${en}</div>`:''}</div>`).join('');
+  document.querySelectorAll('.v').forEach(el=>el.onclick=()=>{selV=el.dataset.v;renderSents();renderCard();});
+}
+function renderCard(){const v=V[selV];if(!v)return;
+  $('#vcard').innerHTML=`<div class="row" style="justify-content:space-between"><div class="big" dir="rtl">${colorRoot(selV,v.root)}</div><div style="color:var(--faint)">${v.mean}</div></div>
+  <dl class="kv"><dt>Root</dt><dd class="he" style="direction:rtl;text-align:left;font-size:1.2rem">${v.rootTxt}</dd><dt>Binyan</dt><dd>Pi'el <span class="he">(פִּעֵל)</span></dd><dt>Form</dt><dd>${v.form}</dd></dl>
+  <div style="font-size:.85rem;color:var(--faint)">Same root, other words:</div><div class="fam">${v.fam.map(f=>`<span><span class="he">${f[0]}</span> · ${f[1]}</span>`).join('')}</div>
+  ${v.sound?`<div class="soundalike">${v.sound}</div>`:''}`;}
+$('#tgNiqqud').onclick=e=>{niq=!niq;e.target.classList.toggle('on',niq);renderSents();};
+$('#tgTr').onclick=e=>{showTr=!showTr;e.target.classList.toggle('on',showTr);renderSents();};
+renderSents();
+
+/* 4 machine data (needed by root hunt too) */
+const BIN=[['פָּעַל','Pa\'al','active','□ָ□ַ□'],['נִפְעַל','Nif\'al','passive of pa\'al','נִ□ְ□ַ□'],['פִּעֵל','Pi\'el','active','□ִ□ֵּ□'],['פֻּעַל','Pu\'al','passive of pi\'el','□ֻ□ַּ□'],['הִפְעִיל','Hif\'il','causative','הִ□ְ□ִי□'],['הֻפְעַל','Huf\'al','passive of hif\'il','הֻ□ְ□ַ□'],['הִתְפַּעֵל','Hitpa\'el','reflexive','הִתְ□ַ□ֵּ□']];
+const he=s=>`<span class="he">${s}</span>`;
+// form: [past, meaning, freq s|w|r, example he, example en, warning?]
+const M={
+  'כתב':{label:'כ־ת־ב',forms:[
+    ['כָּתַב','wrote','s','הוא כָּתַב לי הודעה.','He wrote me a message.'],
+    ['נִכְתַּב','was written','w','הספר נִכְתַּב לפני מאה שנה.','The book was written a hundred years ago.'],
+    null,null,
+    ['הִכְתִּיב','dictated; set (the pace, the terms)','w','המאמן הִכְתִּיב את הקצב.','The coach set the pace.','Mostly figurative: "dictated the terms", "set the tone". Less often dictation in class.'],
+    ['הֻכְתַּב','was dictated','r','התנאים הֻכְתְּבוּ מלמעלה.','The terms were dictated from above.'],
+    ['הִתְכַּתֵּב','corresponded, texted back and forth','s','הוא הִתְכַּתֵּב איתה כל הלילה.','He was texting with her all night.']],
+    traps:[`${he('כְּתֹבֶת')} means <b>address</b>, not "writing". Same root, unexpected meaning.`,`${he('כְּתִיב')} = spelling. ${he('כְּתִיב מָלֵא')} = the full spelling, with extra ו/י added when there are no vowel marks.`],
+    fam:[['מִכְתָּב','letter (mail)'],['כְּתָבָה','article, news story'],['כַּתָּב','reporter'],['כְּתֹבֶת','address']]},
+  'למד':{label:'ל־מ־ד',forms:[
+    ['לָמַד','learned, studied','s','הוא לָמַד באוניברסיטה בירושלים.','He studied at university in Jerusalem.'],
+    ['נִלְמַד','was learned','w','הלקח נִלְמַד.','The lesson was learned.'],
+    ['לִמֵּד','taught','s','הוא לִמֵּד אותי לנהוג.','He taught me to drive.'],
+    ['לֻמַּד','was taught','r','החומר לֻמַּד בכיתה.','The material was taught in class.','As a verb it\'s rare. You\'ll see the adjective '+he('מְלֻמָּד')+' (learned, scholarly) more often.'],
+    null,null,null],
+    traps:[`Without vowels, ${he('לָמַד')} and ${he('לִמֵּד')} are both written ${he('למד')}. Use the context: "taught" usually has a person after it, like ${he('אותי')} or ${he('אותו')}.`,`In the present tense they look different: ${he('לוֹמֵד')} (learns) vs ${he('מְלַמֵּד')} (teaches).`],
+    fam:[['תַּלְמִיד','student'],['לִמּוּדִים','studies'],['מְלַמֵּד','teacher (religious school)'],['תַּלְמוּד','Talmud']]},
+  'ספר':{label:'ס־פ־ר',forms:[
+    ['סָפַר','counted','s','הוא סָפַר את הכסף פעמיים.','He counted the money twice.'],
+    ['נִסְפַּר','was counted','w','כל קול נִסְפַּר.','Every vote was counted.'],
+    ['סִפֵּר','told','s','הוא סִפֵּר לי בדיחה.','He told me a joke.'],
+    ['סֻפַּר','was told','w','סֻפַּר לנו שהטיסה בוטלה.','We were told the flight was cancelled.'],
+    null,null,
+    ['הִסְתַּפֵּר','got a haircut','s','הוא הִסְתַּפֵּר אתמול.','He got a haircut yesterday.','The ת swap: הִתְ + ס becomes הִסְתַּ.']],
+    traps:[`Without vowels, ${he('ספר')} can be ${he('סֵפֶר')} (book), ${he('סָפַר')} (counted), ${he('סִפֵּר')} (told) or ${he('סַפָּר')} (barber). Same three letters, four readings.`],
+    fam:[['סִפּוּר','story'],['סֵפֶר','book'],['מִסְפָּר','number'],['סִפְרִיָּה','library'],['מִסְפָּרָה','barbershop']],
+    lesson:['Pi\'el · present','מְסַפֶּרֶת',true]},
+  'גדל':{label:'ג־ד־ל',forms:[
+    ['גָּדַל','grew (up)','s','הוא גָּדַל בחיפה.','He grew up in Haifa.'],
+    null,
+    ['גִּדֵּל','raised, grew (something)','s','הוא גִּדֵּל עגבניות במרפסת.','He grew tomatoes on the balcony.'],
+    ['גֻּדַּל','was raised','r','הוא גֻּדַּל על ידי סבתא שלו.','He was raised by his grandmother.'],
+    ['הִגְדִּיל','enlarged, increased','s','הוא הִגְדִּיל את התמונה.','He enlarged (zoomed in on) the picture.'],
+    ['הֻגְדַּל','was increased','w','התקציב הֻגְדַּל.','The budget was increased.'],
+    null],
+    traps:[`English "grow" covers both. A child <i>grows</i>: ${he('גָּדַל')} (no object). You <i>grow</i> tomatoes: ${he('גִּדֵּל')} (with an object).`,`${he('גָּדוֹל')} (big) shares the root, and so does ${he('מִגְדָּל')} (tower).`],
+    fam:[['גָּדוֹל','big'],['מִגְדָּל','tower'],['גֹּדֶל','size'],['גִּדּוּל','growth; crop']],
+    lesson:['Pa\'al vs pi\'el','גָּדַל / גִּדֵּל',false]},
+  'דבר':{label:'ד־ב־ר',forms:[
+    null,null,
+    ['דִּבֵּר','spoke, talked','s','הוא דִּבֵּר איתי בטלפון.','He talked with me on the phone.'],
+    ['דֻּבַּר','was talked about','w','על זה דֻּבַּר הרבה.','This was talked about a lot.'],
+    ['הִדְבִּיר','exterminated (pests)','s','הוא הִדְבִּיר את הג׳וקים.','He got rid of the cockroaches.','Nothing to do with speaking. '+he('מַדְבִּיר')+' = pest exterminator.'],
+    null,
+    ['הִדַּבֵּר','held talks','w','הצדדים הִדַּבְּרוּ.','The two sides held talks.','The ת of הִתְ merges into the ד: הִתְדַּבֵּר becomes הִדַּבֵּר.']],
+    traps:[`The pa'al past isn't used. You'll still meet its present form ${he('דּוֹבֵר')}: a spokesperson, or a speaker of a language (${he('דּוֹבֵר עִבְרִית')}).`,`Spoken: ${he('נְדַבֵּר')} = "we'll talk / talk later". It's pi'el future, not nif'al.`],
+    fam:[['דָּבָר','thing; word'],['דִּבּוּר','speech'],['דּוֹבֵר','spokesperson'],['מַדְבִּיר','exterminator']],
+    lesson:['Pi\'el · present','מְדַבֶּרֶת',true]},
+  'שמר':{label:'ש־מ־ר',forms:[
+    ['שָׁמַר','guarded, kept, looked after','s','הוא שָׁמַר על הילדים.','He looked after the kids.','Goes with '+he('עַל')+': '+he('לִשְׁמֹר עַל')+' = take care of.'],
+    ['נִשְׁמַר','was saved, was kept','s','הקובץ נִשְׁמַר.','The file was saved.'],
+    ['שִׁמֵּר','preserved','w','המוזיאון שִׁמֵּר את הבניין הישן.','The museum preserved the old building.'],
+    ['שֻׁמַּר','was preserved','r','המבנה שֻׁמַּר.','The structure was preserved.'],
+    null,null,
+    ['הִשְׁתַּמֵּר','was preserved, survived','w','הכתב העתיק הִשְׁתַּמֵּר היטב.','The ancient writing survived well.','ת swap again: הִתְ + שׁ becomes הִשְׁתַּ.']],
+    traps:[`Don't confuse ${he('הִשְׁתַּמֵּר')} with ${he('הִשְׁתַּמֵּשׁ')} (used, root ש־מ־ש). Only the last letter is different.`,`On a computer, ${he('לִשְׁמֹר')} = to <b>save</b> a file. ${he('מָקוֹם שָׁמוּר')} = a reserved seat.`],
+    fam:[['שׁוֹמֵר','guard'],['מִשְׁמֶרֶת','work shift'],['שִׁמּוּרִים','canned food'],['שָׁמוּר','reserved']],
+    lesson:['Pa\'al vs nif\'al','שָׁמַר / נִשְׁמַר',false]},
+  'כנס':{label:'כ־נ־ס',forms:[
+    null,
+    ['נִכְנַס','entered, came in','s','הוא נִכְנַס לחדר.','He came into the room.','Nif\'al form with an <b>active</b> meaning. Not every nif\'al is passive.'],
+    ['כִּנֵּס','convened, gathered (people)','w','השר כִּנֵּס את הצוות.','The minister convened the team.'],
+    null,
+    ['הִכְנִיס','put in, let in','s','הוא הִכְנִיס את המפתח לכיס.','He put the key in his pocket.'],
+    ['הֻכְנַס','was brought in','w','החולה הֻכְנַס לחדר ניתוח.','The patient was taken into surgery.'],
+    ['הִתְכַּנֵּס','assembled, met','w','הצוות הִתְכַּנֵּס בבוקר.','The team met in the morning.']],
+    traps:[`${he('נִכְנַס')} breaks the "nif'al = passive" rule. So do ${he('נִרְדַּם')} (fell asleep) and ${he('נִשְׁאַר')} (stayed).`,`A surprise member of the family: ${he('מִכְנָסַיִם')} (trousers).`],
+    fam:[['כְּנֶסֶת','Knesset'],['כֶּנֶס','conference'],['כְּנִיסָה','entrance'],['הַכְנָסָה','income'],['מִכְנָסַיִם','trousers']],
+    lesson:['Nif\'al · past','נִכְנַס',false]},
+  'לבש':{label:'ל־ב־ש',forms:[
+    ['לָבַשׁ','wore, put on','s','הוא לָבַשׁ מעיל.','He put on a coat.'],
+    null,null,null,
+    ['הִלְבִּישׁ','dressed (someone)','s','היא הִלְבִּישָׁה את הילד.','She dressed the child.'],
+    ['הֻלְבַּשׁ','was dressed','r','הילד הֻלְבַּשׁ בתחפושת.','The child was dressed in a costume.'],
+    ['הִתְלַבֵּשׁ','got dressed','s','הוא הִתְלַבֵּשׁ מהר.','He got dressed quickly.']],
+    traps:[`${he('לָבַשׁ')} needs a piece of clothing (${he('לָבַשׁ חֻלְצָה')}, put on a shirt). ${he('הִתְלַבֵּשׁ')} stands alone: "got dressed". Same idea, different binyan, different sentence shape.`],
+    fam:[['לְבוּשׁ','clothing; dressed'],['תִּלְבֹּשֶׁת','outfit, uniform']],
+    lesson:['Hitpa\'el · past','הִתְלַבֵּשׁ',false]},
+  'סגר':{label:'ס־ג־ר',forms:[
+    ['סָגַר','closed, shut','s','הוא סָגַר את הדלת.','He closed the door.'],
+    ['נִסְגַּר','closed, was closed','s','הסניף נִסְגַּר בשבע.','The branch closed at seven.','English says "the shop closes" with an active verb. Hebrew uses nif\'al, because nobody is doing the closing.'],
+    null,null,
+    ['הִסְגִּיר','handed over, extradited','w','הוא הִסְגִּיר את עצמו למשטרה.','He turned himself in to the police.','Not "caused to close": hif\'il gives this root its own meaning.'],
+    ['הֻסְגַּר','was extradited','w','החשוד הֻסְגַּר לישראל.','The suspect was extradited to Israel.'],
+    ['הִסְתַּגֵּר','shut himself away','w','הוא הִסְתַּגֵּר בבית.','He shut himself away at home.']],
+    traps:[`${he('סֶגֶר')} = lockdown (you heard it constantly in 2020). ${he('מִסְגֶּרֶת')} = frame, framework.`],
+    fam:[['סֶגֶר','lockdown'],['מִסְגֶּרֶת','frame'],['סָגוּר','closed'],['סְגִירָה','closing']],
+    lesson:['Pa\'al vs nif\'al','סָגַר / נִסְגַּר',false]},
+  'פתח':{label:'פ־ת־ח',forms:[
+    ['פָּתַח','opened','s','הוא פָּתַח את החלון.','He opened the window.'],
+    ['נִפְתַּח','opened, was opened','s','הקובץ לא נִפְתַּח.','The file didn\'t open.'],
+    ['פִּתֵּחַ','developed','s','הוא פִּתֵּחַ אפליקציה.','He developed an app.','Pi\'el here means "develop", not "open a lot".'],
+    ['פֻּתַּח','was developed','w','הרכב פֻּתַּח בישראל.','The vehicle was developed in Israel.'],
+    null,null,
+    ['הִתְפַּתֵּחַ','developed, evolved','s','הסיפור הִתְפַּתֵּחַ מהר.','The story developed quickly.']],
+    traps:[`Don't confuse it with ${he('הִפְתִּיעַ')} (surprised), which has the root <b>פ־ת־ע</b>, not פ־ת־ח. Only the last letter is different.`,`${he('מַפְתֵּחַ')} (key) is what opens things: same root.`],
+    fam:[['מַפְתֵּחַ','key'],['פֶּתַח','opening'],['פִּתּוּחַ','development'],['פָּתוּחַ','open']]},
+};
+
+/* 3 root hunt: every word links to a root in the machine */
+const H=[
+  ['מִסְפָּר','number','ספר','noun pattern מִקְטָל'],['מִכְתָּב','letter (mail)','כתב','noun pattern מִקְטָל'],['תַּלְמִיד','student','למד','noun pattern תַּקְטִיל'],
+  ['הִתְלַבֵּשׁ','he got dressed','לבש','hitpa\'el past'],['נִכְנַס','he entered','כנס','nif\'al past'],['מִגְדָּל','tower','גדל','noun pattern מִקְטָל'],
+  ['מְדַבֶּרֶת','she speaks','דבר','pi\'el present'],['מִסְגֶּרֶת','frame','סגר','noun pattern מִקְטֶלֶת'],['שׁוֹמֵר','guard','שמר','pa\'al present (קוֹטֵל)'],
+  ['הִתְפַּתְּחוּת','development','פתח','hitpa\'el noun (הִתְקַטְּלוּת)'],
+];
+$('#hTot').textContent=H.length;
+let hi=0,score=0,streak=0,picked=[],solved=false;
+const clean=w=>w.replace(MARKS,'');
+function hRender(){const [w,g]=H[hi];
+  $('#hWord').textContent=w;$('#hGloss').textContent=g;$('#hNum').textContent=hi+1;
+  const letters=[...clean(w)];
+  $('#hTiles').innerHTML=letters.map((l,i)=>`<button class="tile" data-i="${i}" aria-label="letter ${l}">${l}</button>`).join('');
+  picked=[];solved=false;$('#hAns').textContent='';$('#hFb').textContent='';$('#hFb').className='feedback';$('#hNext').hidden=true;$('#hLinks').innerHTML='';
+  document.querySelectorAll('.tile').forEach(t=>t.onclick=()=>hTap(t,letters));
+}
+function goMachine(r){mRoot=r;mRender();document.querySelector('.tab[data-tab="machine"]').click();window.scrollTo({top:0});}
+function goLesson(){document.querySelector('.tab[data-tab="read"]').click();window.scrollTo({top:0});}
+function hTap(t,letters){if(solved||t.classList.contains('picked'))return;
+  t.classList.add('picked');picked.push(+t.dataset.i);
+  $('#hAns').textContent=picked.map(i=>norm(letters[i])).join('־');
+  if(picked.length<3)return;
+  const [w,,r,pat]=H[hi];const guess=picked.map(i=>norm(letters[i])).join('');
+  if(guess===r){solved=true;streak++;const pts=10*(streak>=3?2:1);score+=pts;const d=M[r];
+    picked.forEach(i=>document.querySelector(`.tile[data-i="${i}"]`).className='tile ok');
+    $('#hFb').className='feedback good';
+    $('#hFb').innerHTML=`✓ Root ${d.label} · +${pts}${streak>=3?' (streak ×2)':''}<br><span style="color:var(--ink)">Pattern: ${pat}</span><br><span style="color:var(--faint)">Same root: ${d.fam.slice(0,3).map(f=>he(f[0])+' '+f[1]).join(' · ')}</span>`;
+    $('#hLinks').innerHTML=`<button class="btn" id="hToM">See ${d.label} in all binyanim →</button>`+(d.lesson?`<button class="btn" id="hToL" ${d.lesson[2]?'':'disabled title="Unlocks later in the course"'}>Lesson: ${d.lesson[0]}${d.lesson[2]?' →':' 🔒'}</button>`:'');
+    $('#hToM').onclick=()=>goMachine(r);if(d.lesson&&d.lesson[2])$('#hToL').onclick=goLesson;
+    $('#hNext').hidden=false;$('#hNext').textContent=hi<H.length-1?'Next word →':'Play again ↺';
+  } else {streak=0;$('#hFb').className='feedback bad';$('#hFb').textContent='Not quite. Hint: '+hint(w);
+    document.querySelectorAll('.tile.picked').forEach(x=>{x.classList.add('no');setTimeout(()=>x.className='tile',350);});picked=[];setTimeout(()=>$('#hAns').textContent='',350);}
+  $('#hScore').textContent=score;$('#hStreak').textContent=streak;$('#hXp').style.width=Math.min(100,score/1.5)+'%';
+}
+function hint(w){const c=clean(w);
+  if(/^הִתְ/.test(w))return 'הִתְ at the start is the hitpa\'el pattern. When a ת sits inside the root letters, it\'s often the swapped ת.';
+  if(/^[מת]/.test(c))return 'a מ or ת at the start is often a pattern letter.';
+  if(/^[הנ]/.test(c))return 'a ה or נ at the start is often a pattern letter.';
+  if(/[וי]/.test(c.slice(1,-1)))return 'a ו or י in the middle is often just a vowel letter.';
+  return 'ת at the end (ֶת, וּת) is usually a feminine or noun ending.';}
+$('#hClear').onclick=()=>{if(solved)return;picked=[];document.querySelectorAll('.tile').forEach(x=>x.className='tile');$('#hAns').textContent='';};
+$('#hNext').onclick=()=>{if(hi<H.length-1)hi++;else{hi=0;score=0;streak=0;$('#hScore').textContent=0;$('#hStreak').textContent=0;$('#hXp').style.width='0';}hRender();};
+hRender();
+
+/* 4 machine render */
+const FQ={s:'speech',w:'written',r:'rare'};
+let mRoot='ספר';
+function mRender(){const d=M[mRoot];
+  $('#roots').innerHTML=Object.keys(M).map(k=>`<button class="btn${k===mRoot?' on':''}" data-r="${k}">${M[k].label}</button>`).join('');
+  document.querySelectorAll('#roots .btn').forEach(b=>b.onclick=()=>{mRoot=b.dataset.r;mRender();});
+  $('#mBody').innerHTML=BIN.map((b,i)=>{const f=d.forms[i];
+    const bcell=`<td><span class="bn">${b[0]}</span><br><span class="voice">${b[1]} · ${b[2]}</span><br><span class="voice he" style="font-size:1rem">${b[3]}</span></td>`;
+    if(!f)return `<tr>${bcell}<td class="form none">—</td><td class="none">not used with this root</td></tr>`;
+    return `<tr>${bcell}<td class="form">${colorRoot(f[0],mRoot)}</td><td class="mean"><b>${f[1]}</b> <span class="fq ${f[2]}">${FQ[f[2]]}</span><div class="ex"><span class="he">${f[3]}</span><span class="en">${f[4]}</span></div>${f[5]?`<div class="warn">⚠ ${f[5]}</div>`:''}</td></tr>`;}).join('');
+  $('#mTraps').innerHTML=d.traps.map(t=>`<div class="trap">${t}</div>`).join('');
+  $('#mFam').innerHTML=d.fam.map(f=>`<span><span class="he">${f[0]}</span> · ${f[1]}</span>`).join('');
+  $('#mLesson').innerHTML=d.lesson?`<button class="btn" id="mToL" ${d.lesson[2]?'':'disabled'}>In the course: ${d.lesson[0]} (${he(d.lesson[1])})${d.lesson[2]?' →':' 🔒'}</button>`:'';
+  if(d.lesson&&d.lesson[2])$('#mToL').onclick=goLesson;
+}
+mRender();
+
+/* 5 picks */
+const P=[
+  ['course','Course map with the binyan pairs','Locked path, with lessons in order'],
+  ['read','Lesson text with tappable verbs','Root, pattern, word family, sound-alike notes'],
+  ['niq','Vowels toggle on the pattern words','Shows vowels only where the pattern is'],
+  ['hunt','Root Hunt game','Tap the root letters, streaks and points'],
+  ['machine','Pattern Machine','One root across all binyanim'],
+  ['quiz','Lesson-end check','5 questions that unlock the next lesson'],
+  ['side','Side tracks','Noun patterns, little words with endings, weak roots'],
+];
+$('#picks').innerHTML=P.map(p=>`<label class="pick"><input type="checkbox" id="p_${p[0]}" checked><span><b>${p[1]}</b><small>${p[2]}</small></span></label>`).join('');
+$('#pCopy').onclick=()=>{const yes=P.filter(p=>$('#p_'+p[0]).checked).map(p=>p[1]),no=P.filter(p=>!$('#p_'+p[0]).checked).map(p=>p[1]);
+  const txt=`Keep: ${yes.join('; ')||'none'}\nDrop: ${no.join('; ')||'none'}\nNotes: ${$('#pNote').value.trim()||'—'}`;
+  const out=$('#pOut');out.value=txt;out.hidden=false;
+  navigator.clipboard?.writeText(txt).then(()=>$('#pMsg').textContent='Copied. Paste it into the chat.').catch(()=>{out.select();$('#pMsg').textContent='Select the text below and copy it.';}) ?? (out.select(),$('#pMsg').textContent='Select the text below and copy it.');};
+</script>
