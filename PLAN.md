@@ -9,6 +9,13 @@ web app. Hand this whole file to Claude Code as the brief._
 > writes, debugs, and deploys this app. The deployed app's **runtime engine is a free
 > model** (Gemini Flash, with automatic fallback — see the Model section). So the only
 > AI cost is the one-time build; running the app is free.
+>
+> _Update 2026-11-26 (model selector, `docs/superpowers/specs/2026-11-26-ai-model-selector-design.md`):_
+> Claude is now an **optional runtime tier** after OpenRouter, used only when
+> `ANTHROPIC_API_KEY` is set — a **paid** Anthropic Console API key (a Claude Pro/Max
+> subscription cannot be used). Without it the runtime stays free-only. The learner can
+> pick which configured provider goes first; **any** provider error (not only 429) now
+> advances the chain, superseding the "only 429 advances" rule below.
 
 ---
 
@@ -310,6 +317,8 @@ interruption to the user.
    - One key, multiple free models behind an OpenAI-compatible API — flexible safety net.
 
 ### Fallback logic (be precise, Claude Code)
+- _Superseded 2026-11-26: any provider error now advances to the next tier, so a dead quota
+  or a provider outage never strands the learner; each failure is logged server-side._
 - Try the current tier. **Only an HTTP 429 / explicit rate-limit/quota error advances to the
   next tier.** Other errors (400 bad request, network/timeout, malformed response) must NOT
   trigger silent failover — surface them, so real bugs aren't masked by quietly switching
@@ -373,6 +382,7 @@ _Updated 2026-06-14. Core build is done and pushed; nothing deployed or live-tes
 - Security: passphrase gate (constant-time compare), per-IP rate limit (20/min) that runs **before** auth, trusted-IP derivation (`x-real-ip` / rightmost XFF). Auth extracted to `app/lib/auth.ts` as a one-file seam for future accounts.
 - Active-model indicator in the header; `localStorage` persistence (`hsp_vocab`, `hsp_messages`, `hsp_pass`); passphrase `Gate` with rejection feedback.
 - `.env.example`, README, `.gitignore` allows committing the example.
+- **AI model selector (2026-11-26):** header selector (Auto + configured providers, kept in `hsp_provider`), `GET /api/models` (names only, same rate limit + auth via `app/lib/guard.ts`), optional Claude tier (paid Console key via `ANTHROPIC_API_KEY`; Pro subscription not usable), any-error fallback, AI controls disabled with a banner when no provider is configured or the device is offline. Provider logic in `app/lib/providers.ts`, unit-tested with Vitest (`npm test`).
 
 ### Not done / next (roughly in priority order)
 1. **Get keys + run it locally.** `cp .env.example .env.local`, set `APP_PASSPHRASE` + at least one provider key, `npm run dev`. Nothing has been run against real providers yet.
@@ -388,7 +398,7 @@ _Updated 2026-06-14. Core build is done and pushed; nothing deployed or live-tes
 - **Real auth / accounts** — only the `authenticate()` seam exists. Build a provider + login + user store only if publishing. Parked pending that decision.
 - **Cross-device sync** — `localStorage` only (per-device). Add a hosted KV/DB if sync becomes a real need.
 - **Brute-force lockout / backoff, per-user rate limits** — rate limit already bounds guessing; strong passphrase is the real defense for single-user.
-- **Accessibility pass, automated tests** — not yet done.
+- **Accessibility pass, UI/e2e tests** — not yet done (unit tests cover provider logic only).
 
 ### Known limitations
 - Rate limiter is in-memory: resets on cold start, per-instance. Fine for single-user; swap for Vercel KV if ever multi-instance.
