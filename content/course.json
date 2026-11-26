@@ -1,0 +1,110 @@
+{
+  "units": [
+    {
+      "id": "foundations",
+      "title": "Foundations",
+      "heTitle": "יְסוֹדוֹת",
+      "available": true,
+      "lessons": [
+        "f-1",
+        "f-2",
+        "f-3",
+        "f-4",
+        "f-5"
+      ]
+    },
+    {
+      "id": "paal",
+      "title": "Pa'al",
+      "heTitle": "פָּעַל",
+      "available": true,
+      "lessons": [
+        "paal-1",
+        "paal-2",
+        "paal-3",
+        "paal-4",
+        "paal-5"
+      ]
+    },
+    {
+      "id": "nifal",
+      "title": "Nif'al",
+      "heTitle": "נִפְעַל",
+      "available": true,
+      "lessons": [
+        "nifal-1",
+        "nifal-2",
+        "nifal-3",
+        "nifal-4"
+      ]
+    },
+    {
+      "id": "piel",
+      "title": "Pi'el",
+      "heTitle": "פִּעֵל",
+      "available": true,
+      "lessons": [
+        "piel-1",
+        "piel-2",
+        "piel-3",
+        "piel-4"
+      ]
+    },
+    {
+      "id": "pual",
+      "title": "Pu'al",
+      "heTitle": "פֻּעַל",
+      "available": false,
+      "lessons": []
+    },
+    {
+      "id": "hifil",
+      "title": "Hif'il",
+      "heTitle": "הִפְעִיל",
+      "available": false,
+      "lessons": []
+    },
+    {
+      "id": "hufal",
+      "title": "Huf'al",
+      "heTitle": "הֻפְעַל",
+      "available": false,
+      "lessons": []
+    },
+    {
+      "id": "hitpael",
+      "title": "Hitpa'el",
+      "heTitle": "הִתְפַּעֵל",
+      "available": false,
+      "lessons": []
+    },
+    {
+      "id": "mixed",
+      "title": "Mixed review",
+      "heTitle": "חֲזָרָה",
+      "available": false,
+      "lessons": []
+    },
+    {
+      "id": "nouns",
+      "title": "Noun patterns",
+      "heTitle": "מִשְׁקָלִים",
+      "available": false,
+      "lessons": []
+    },
+    {
+      "id": "little-words",
+      "title": "Little words with endings",
+      "heTitle": "מִילִּיּוֹת",
+      "available": false,
+      "lessons": []
+    },
+    {
+      "id": "weak-roots",
+      "title": "Weak roots",
+      "heTitle": "גְּזָרוֹת",
+      "available": false,
+      "lessons": []
+    }
+  ]
+}
