@@ -43,3 +43,6 @@ next-env.d.ts
 
 # agent worktrees (temporary working copies)
 .claude/worktrees/
+
+# downloaded verification sources (large, not committed)
+.cache/
