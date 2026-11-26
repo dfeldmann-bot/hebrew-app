@@ -59,6 +59,8 @@ export default function HebrewStoryPartner() {
     try {
       const storedVocab = localStorage.getItem("hsp_vocab");
       const storedMessages = localStorage.getItem("hsp_messages");
+      // Hydrate from localStorage after mount (it doesn't exist during SSR).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (storedVocab) setVocab(JSON.parse(storedVocab));
       if (storedMessages) {
         const parsed = JSON.parse(storedMessages);
@@ -411,7 +413,7 @@ export default function HebrewStoryPartner() {
       {showVocab && (
         <div style={{ padding: "0.9rem 1.25rem", background: PALETTE.paperDeep, borderBottom: `1px solid ${PALETTE.sand}` }}>
           <div style={{ fontSize: 13, color: PALETTE.faint, marginBottom: 8, fontFamily: "Georgia, serif" }}>
-            Words you're studying — the story will weave these in:
+            Words you&apos;re studying — the story will weave these in:
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
             {vocab.map((w) => (
@@ -608,7 +610,7 @@ export default function HebrewStoryPartner() {
       </div>
 
       <div style={{ padding: "7px 12px", background: PALETTE.paperDeep, textAlign: "center", fontSize: 11.5, color: PALETTE.faint, fontFamily: "Georgia, serif" }}>
-        Tap any Hebrew word to get an explanation · type "explain" anytime
+        Tap any Hebrew word to get an explanation · type &quot;explain&quot; anytime
       </div>
 
       <style>{`
