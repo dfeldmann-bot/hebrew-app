@@ -1,24 +1,13 @@
-import { authenticate } from "../../lib/auth";
+import { guard } from "../../lib/guard";
+import {
+  configuredTiers,
+  orderTiers,
+  parseProvider,
+  runChain,
+  type Message,
+} from "../../lib/providers";
 
 export const runtime = "nodejs";
-
-// ponytail: rate limit resets on cold start / is per-instance; swap for Vercel KV if multi-instance.
-const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
-const RATE_LIMIT_MAX = 20;
-const RATE_LIMIT_WINDOW_MS = 60_000;
-
-class RateLimitError extends Error {}
-
-function checkRateLimit(ip: string): void {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    rateLimitMap.set(ip, { count: 1, windowStart: now });
-    return;
-  }
-  if (entry.count >= RATE_LIMIT_MAX) throw new RateLimitError();
-  entry.count++;
-}
 
 function buildSystemPrompt(support: string, vocab: string[]) {
   const supportText = {
@@ -58,91 +47,10 @@ function buildAnalyzePrompt() {
   return `The learner tapped a Hebrew sentence to understand it in context. Reply with: first, a natural English translation of the whole sentence on one line. Then a compact word-by-word breakdown — one line per meaningful word, formatted "word — meaning" — giving each word's meaning AS USED IN THIS sentence (add a short root or grammar note only when it genuinely helps). Be concise. No story, no greeting, no follow-up question.`;
 }
 
-type Message = { role: "user" | "assistant"; content: string };
-
-interface Tier {
-  name: "gemini" | "groq" | "openrouter";
-  key: string;
-  model: string;
-}
-
-async function callTier(
-  tier: Tier,
-  system: string,
-  messages: Message[]
-): Promise<string> {
-  if (tier.name === "gemini") {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${tier.model}:generateContent?key=${tier.key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: system }] },
-          contents: messages.map((m) => ({
-            role: m.role === "assistant" ? "model" : "user",
-            parts: [{ text: m.content }],
-          })),
-        }),
-      }
-    );
-    if (res.status === 429) throw new RateLimitError();
-    if (!res.ok) throw new Error(`Gemini ${res.status}`);
-    const data = await res.json();
-    const parts: { text?: string }[] =
-      data.candidates?.[0]?.content?.parts ?? [];
-    return parts
-      .map((p) => p.text ?? "")
-      .join("")
-      .trim();
-  }
-
-  // Groq / OpenRouter (OpenAI-compatible)
-  const endpoint =
-    tier.name === "groq"
-      ? "https://api.groq.com/openai/v1/chat/completions"
-      : "https://openrouter.ai/api/v1/chat/completions";
-
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${tier.key}`,
-    },
-    body: JSON.stringify({
-      model: tier.model,
-      max_tokens: 1000,
-      messages: [{ role: "system", content: system }, ...messages],
-    }),
-  });
-  if (res.status === 429) throw new RateLimitError();
-  if (!res.ok) throw new Error(`${tier.name} ${res.status}`);
-  const data = await res.json();
-  return (data.choices?.[0]?.message?.content ?? "").trim();
-}
-
 export async function POST(req: Request): Promise<Response> {
-  // 1. Rate limit FIRST — so failed-auth attempts are also counted (caps
-  // passphrase brute-forcing at the per-window limit). Trust only the IP set by
-  // the platform edge: x-real-ip (Vercel) or the RIGHTMOST x-forwarded-for entry
-  // (the one the trusted proxy appended); the leftmost token is client-spoofable.
-  // ponytail: an unknown bucket is shared, which is fine for a single-user app.
-  const xff = req.headers.get("x-forwarded-for");
-  const ip =
-    req.headers.get("x-real-ip")?.trim() ||
-    (xff ? xff.split(",").pop()!.trim() : "") ||
-    "unknown";
-  try {
-    checkRateLimit(ip);
-  } catch (e) {
-    if (e instanceof RateLimitError)
-      return Response.json({ error: "rate_limited" }, { status: 429 });
-    throw e;
-  }
-
-  // 2. Authenticate — the single seam for adding real accounts later (app/lib/auth.ts)
-  const auth = authenticate(req);
-  if (!auth.ok) return Response.json({ error: "unauthorized" }, { status: 401 });
+  // 1–2. Rate limit, then authenticate (shared with /api/models — app/lib/guard.ts)
+  const denied = guard(req);
+  if (denied) return denied;
 
   // 3. Parse & sanitize body
   let body: Record<string, unknown>;
@@ -173,39 +81,12 @@ export async function POST(req: Request): Promise<Response> {
       ? buildAnalyzePrompt()
       : buildSystemPrompt(support, vocab);
 
-  // 5. Fallback chain
-  const tiers: Tier[] = (
-    [
-      {
-        name: "gemini" as const,
-        key: process.env.GOOGLE_AI_API_KEY ?? "",
-        model: process.env.GEMINI_MODEL ?? "gemini-2.0-flash",
-      },
-      {
-        name: "groq" as const,
-        key: process.env.GROQ_API_KEY ?? "",
-        model: process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
-      },
-      {
-        name: "openrouter" as const,
-        key: process.env.OPENROUTER_API_KEY ?? "",
-        model:
-          process.env.OPENROUTER_MODEL ??
-          "meta-llama/llama-3.3-70b-instruct:free",
-      },
-    ] satisfies Tier[]
-  ).filter((t) => t.key !== "");
-
-  for (const tier of tiers) {
-    try {
-      const text = await callTier(tier, system, rawMessages);
-      return Response.json({ text, model: tier.name });
-    } catch (e) {
-      if (e instanceof RateLimitError) continue; // advance to next tier
-      console.error(`[chat] ${tier.name} error:`, e);
-      break; // non-429 error: stop and return 502
-    }
-  }
+  // 5. Fallback chain — the learner's preferred provider (if valid and
+  // configured) goes first; unknown values mean Auto. Any provider error
+  // advances to the next tier.
+  const tiers = orderTiers(configuredTiers(), parseProvider(body.provider));
+  const result = await runChain(tiers, system, rawMessages);
+  if (result) return Response.json(result);
 
   return Response.json({ error: "all_models_unavailable" }, { status: 502 });
 }

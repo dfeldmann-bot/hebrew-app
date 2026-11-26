@@ -8,6 +8,8 @@ export default function Gate({ children }) {
   const [authError, setAuthError] = useState(false);
 
   useEffect(() => {
+    // Hydrate from localStorage after mount (it doesn't exist during SSR).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPass(localStorage.getItem("hsp_pass") || "");
     if (localStorage.getItem("hsp_auth_error")) {
       setAuthError(true);

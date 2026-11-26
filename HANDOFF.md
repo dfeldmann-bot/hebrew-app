@@ -22,13 +22,19 @@ Claude is the *builder*, never the runtime.
 - `app/HebrewStoryPartner.jsx` — the whole UI (client component). Inline styles,
   a `PALETTE` object, RTL handling, support toggle, tap-to-explain, vocab drawer.
   Persists to `localStorage` (`hsp_vocab`, `hsp_messages`, `hsp_pass`,
-  `hsp_auth_error`). Calls `POST /api/chat` with an `x-app-passphrase` header.
-- `app/api/chat/route.ts` — the ONLY place provider keys live. Order: rate-limit
-  → authenticate → parse/sanitize → fallback chain. Returns `{ text, model }`.
+  `hsp_auth_error`, `hsp_provider`). Calls `GET /api/models` and `POST /api/chat`
+  with an `x-app-passphrase` header.
+- `app/api/chat/route.ts` — Order: rate-limit → authenticate (both in
+  `app/lib/guard.ts`) → parse/sanitize → fallback chain. Returns `{ text, model }`.
+- `app/lib/providers.ts` — the ONLY place provider keys are read: configured
+  tiers, preferred-provider ordering, per-provider calls (incl. optional Claude),
+  fallback loop. Tests in `app/lib/providers.test.ts` (`npm test`).
+- `app/api/models/route.ts` — `GET` → `{ providers: [...] }` (names only).
 - `app/lib/auth.ts` — `authenticate(req) -> { ok, user }`. **The single seam for
   real accounts later** — replace its body, nothing else changes.
 - `app/Gate.jsx` — passphrase gate wrapping the app in `app/page.tsx`.
-- `.env.example` — `APP_PASSPHRASE` + three provider keys + optional model
+- `.env.example` — `APP_PASSPHRASE` + three free provider keys + optional
+  paid Claude key (Anthropic Console, not a Pro subscription) + optional model
   overrides. Real keys go in `.env.local` (gitignored).
 - `PLAN.md` — the approved spec. Don't re-litigate it; it's signed off.
 
@@ -38,12 +44,14 @@ cp .env.example .env.local   # set APP_PASSPHRASE + >=1 provider key
 npm install
 npm run dev                  # localhost:3000; phone via the printed Network: URL (same wifi)
 ```
-Verify build: `npm run build`. Typecheck: `npx tsc --noEmit`.
+Verify build: `npm run build`. Typecheck: `npx tsc --noEmit`. Tests: `npm test`. Lint: `npm run lint`.
 
 ## Contracts (don't break these silently)
 - `POST /api/chat` — req header `x-app-passphrase`; body `{ support, vocab,
-  messages:[{role,content}] }`. Resp `200 {text,model}` / `401` / `429` / `400`
-  / `502`. Only HTTP 429 from a provider advances the fallback chain.
+  provider?, messages:[{role,content}] }`. Resp `200 {text,model}` / `401` / `429`
+  / `400` / `502`. `provider` ∈ `"gemini"|"groq"|"openrouter"|"claude"` goes first
+  if configured; anything else = Auto. Any provider error advances the chain.
+- `GET /api/models` — same header, rate limit and auth; resp `200 {providers}`.
 - `support` ∈ `"heavy"|"light"|"none"` (must match the keys in
   `buildSystemPrompt` inside the route).
 - localStorage keys above are shared between `Gate.jsx` and

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useSyncExternalStore } from "react";
 
 // ── Hebrew Story Partner ──────────────────────────────────────────────
 // A live, AI-powered conversation + interactive-story companion for a
@@ -38,7 +38,21 @@ const STARTERS = [
   { he: "הפתע אותי", en: "Surprise me" },
 ];
 
-const MODEL_LABELS = { gemini: "Gemini", groq: "Groq", openrouter: "OpenRouter" };
+const MODEL_LABELS = { gemini: "Gemini", groq: "Groq", openrouter: "OpenRouter", claude: "Claude" };
+
+function readPass() {
+  try { return localStorage.getItem("hsp_pass") || ""; } catch { return ""; }
+}
+
+// navigator.onLine + online/offline events. Server snapshot = online.
+function subscribeOnline(cb) {
+  window.addEventListener("online", cb);
+  window.addEventListener("offline", cb);
+  return () => {
+    window.removeEventListener("online", cb);
+    window.removeEventListener("offline", cb);
+  };
+}
 
 export default function HebrewStoryPartner() {
   const [support, setSupport] = useState("light");
@@ -53,13 +67,28 @@ export default function HebrewStoryPartner() {
   const [hydrated, setHydrated] = useState(false);
   const [pop, setPop] = useState(null); // tap-to-explain popover: {id, loading, text}
   const [analysis, setAnalysis] = useState(null); // per-line sentence analysis: {id, loading, text}
+  const [providers, setProviders] = useState(null); // configured provider names; null = not known yet
+  const [choice, setChoice] = useState("auto"); // preferred provider, persisted in hsp_provider
+  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const scrollRef = useRef(null);
+
+  // A stored provider that the server no longer offers falls back to Auto.
+  const provider = providers && !providers.includes(choice) ? "auto" : choice;
+  // ponytail: a failed /api/models (429/500) leaves providers null — unknown, not empty —
+  // so the AI stays usable and /api/chat reports its own errors.
+  const aiDisabled = !online || (providers !== null && providers.length === 0);
+  const disabledReason = !online
+    ? "You're offline — the AI needs internet."
+    : "No AI model is available right now.";
 
   useEffect(() => {
     try {
       const storedVocab = localStorage.getItem("hsp_vocab");
       const storedMessages = localStorage.getItem("hsp_messages");
+      // Hydrate from localStorage after mount (it doesn't exist during SSR).
       if (storedVocab) setVocab(JSON.parse(storedVocab));
+      const storedProvider = localStorage.getItem("hsp_provider");
+      if (storedProvider) setChoice(storedProvider);
       if (storedMessages) {
         const parsed = JSON.parse(storedMessages);
         setMessages(parsed);
@@ -68,6 +97,33 @@ export default function HebrewStoryPartner() {
     } catch (_) {}
     setHydrated(true);
   }, []);
+
+  // Which providers the server has keys for (names only). Drives the selector
+  // and the "no model" disabled state.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/models", { headers: { "x-app-passphrase": readPass() } })
+      .then(async (res) => {
+        if (res.status === 401) {
+          try {
+            localStorage.setItem("hsp_auth_error", "1");
+            localStorage.removeItem("hsp_pass");
+          } catch {}
+          location.reload();
+          return;
+        }
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.providers)) setProviders(data.providers);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  function chooseProvider(value) {
+    setChoice(value);
+    try { localStorage.setItem("hsp_provider", value); } catch {}
+  }
 
   useEffect(() => {
     if (hydrated) localStorage.setItem("hsp_vocab", JSON.stringify(vocab));
@@ -83,7 +139,7 @@ export default function HebrewStoryPartner() {
 
   async function send(userText) {
     const text = (userText ?? input).trim();
-    if (!text || loading) return;
+    if (!text || loading || aiDisabled) return;
     setInput("");
     setStarted(true);
 
@@ -92,13 +148,14 @@ export default function HebrewStoryPartner() {
     setLoading(true);
 
     try {
-      const pass = localStorage.getItem("hsp_pass") || "";
+      const pass = readPass();
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-app-passphrase": pass },
         body: JSON.stringify({
           support,
           vocab,
+          provider,
           messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -119,7 +176,9 @@ export default function HebrewStoryPartner() {
         {
           role: "assistant",
           content:
-            "אופס — משהו השתבש בחיבור. (Oops — connection issue. Check your signal and try again.)",
+            err?.message === "HTTP 502"
+              ? "הסיפור נחתך לרגע — נסה שוב. (The story paused — no AI model could answer just now. Try again in a moment.)"
+              : "אופס — משהו השתבש בחיבור. (Oops — connection issue. Check your signal and try again.)",
         },
       ]);
     } finally {
@@ -130,15 +189,15 @@ export default function HebrewStoryPartner() {
   // Tap a word → fetch a short gloss into a popover anchored above it. Does NOT
   // touch the conversation. `id` keys the popover to that word instance.
   async function explainWord(word, id) {
-    if (!word) return;
+    if (!word || aiDisabled) return;
     if (pop?.id === id) { setPop(null); return; } // tap again = dismiss
     setPop({ id, loading: true, text: "" });
     try {
-      const pass = localStorage.getItem("hsp_pass") || "";
+      const pass = readPass();
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-app-passphrase": pass },
-        body: JSON.stringify({ mode: "explain", messages: [{ role: "user", content: word }] }),
+        body: JSON.stringify({ mode: "explain", provider, messages: [{ role: "user", content: word }] }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -151,14 +210,15 @@ export default function HebrewStoryPartner() {
   // Analyze a whole sentence/line → breakdown panel under the line. UI only,
   // never added to the conversation. `id` keys the panel to that line.
   async function analyzeSentence(text, id) {
+    if (aiDisabled) return;
     if (analysis?.id === id) { setAnalysis(null); return; } // toggle off
     setAnalysis({ id, loading: true, text: "" });
     try {
-      const pass = localStorage.getItem("hsp_pass") || "";
+      const pass = readPass();
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-app-passphrase": pass },
-        body: JSON.stringify({ mode: "analyze", messages: [{ role: "user", content: text }] }),
+        body: JSON.stringify({ mode: "analyze", provider, messages: [{ role: "user", content: text }] }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -218,7 +278,7 @@ export default function HebrewStoryPartner() {
           }}
         >
           {tokens.map((tok, ti) => {
-            const isHebrewWord = /[֐-׿]/.test(tok) && !isGloss;
+            const isHebrewWord = /[֐-׿]/.test(tok) && !isGloss && !aiDisabled;
             if (isHebrewWord) {
               const id = `${mi}-${li}-${ti}`;
               const open = pop?.id === id;
@@ -269,7 +329,7 @@ export default function HebrewStoryPartner() {
             return <span key={ti}>{tok}</span>;
           })}
         </p>
-        {hasHebrew && !isGloss && (
+        {hasHebrew && !isGloss && !aiDisabled && (
           <div style={{ textAlign: isRtl ? "right" : "left", margin: "-0.15rem 0 0.7rem" }}>
             <button
               onClick={(e) => { e.stopPropagation(); analyzeSentence(line.trim(), lineId); }}
@@ -355,9 +415,37 @@ export default function HebrewStoryPartner() {
             <div style={{ fontSize: 12.5, opacity: 0.8, marginTop: 4, fontFamily: "Georgia, serif" }}>
               Your live Hebrew conversation companion
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5, fontFamily: "Georgia, serif", fontSize: 11, opacity: 0.7 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: PALETTE.gold, display: "inline-block", flexShrink: 0 }} />
-              {MODEL_LABELS[model] || model}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 5, fontFamily: "Georgia, serif", fontSize: 11 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 5, opacity: 0.7 }} title="Model that answered last">
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: PALETTE.gold, display: "inline-block", flexShrink: 0 }} />
+                {MODEL_LABELS[model] || model}
+              </span>
+              {providers && providers.length > 0 && (
+                <select
+                  aria-label="Preferred AI model"
+                  title="Tried first; the others take over if it fails"
+                  value={provider}
+                  disabled={aiDisabled}
+                  onChange={(e) => chooseProvider(e.target.value)}
+                  style={{
+                    background: "rgba(244,236,224,0.1)",
+                    color: PALETTE.paper,
+                    border: "1px solid rgba(244,236,224,0.4)",
+                    borderRadius: 6,
+                    padding: "2px 4px",
+                    fontSize: 11,
+                    fontFamily: "Georgia, serif",
+                    cursor: aiDisabled ? "default" : "pointer",
+                    opacity: aiDisabled ? 0.5 : 1,
+                  }}
+                >
+                  {["auto", ...providers].map((p) => (
+                    <option key={p} value={p} style={{ background: PALETTE.seaDeep, color: PALETTE.paper }}>
+                      {p === "auto" ? "Auto" : MODEL_LABELS[p] || p}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
           <button
@@ -407,11 +495,28 @@ export default function HebrewStoryPartner() {
         </div>
       </div>
 
+      {/* AI unavailable banner */}
+      {aiDisabled && (
+        <div
+          role="status"
+          style={{
+            padding: "8px 1.25rem",
+            background: PALETTE.clayDeep,
+            color: PALETTE.paper,
+            fontSize: 13,
+            fontFamily: "Georgia, serif",
+            textAlign: "center",
+          }}
+        >
+          {disabledReason}
+        </div>
+      )}
+
       {/* Vocab drawer */}
       {showVocab && (
         <div style={{ padding: "0.9rem 1.25rem", background: PALETTE.paperDeep, borderBottom: `1px solid ${PALETTE.sand}` }}>
           <div style={{ fontSize: 13, color: PALETTE.faint, marginBottom: 8, fontFamily: "Georgia, serif" }}>
-            Words you're studying — the story will weave these in:
+            Words you&apos;re studying — the story will weave these in:
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
             {vocab.map((w) => (
@@ -506,12 +611,14 @@ export default function HebrewStoryPartner() {
                 <button
                   key={i}
                   onClick={() => send(s.he)}
+                  disabled={aiDisabled}
                   style={{
                     background: PALETTE.paperDeep,
                     border: `1px solid ${PALETTE.sand}`,
                     borderRadius: 12,
                     padding: "12px 16px",
-                    cursor: "pointer",
+                    cursor: aiDisabled ? "default" : "pointer",
+                    opacity: aiDisabled ? 0.5 : 1,
                     textAlign: "right",
                     transition: "transform 0.1s",
                   }}
@@ -579,6 +686,7 @@ export default function HebrewStoryPartner() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="כתוב בעברית או באנגלית… / type in Hebrew or English"
+          disabled={aiDisabled}
           style={{
             flex: 1,
             padding: "11px 15px",
@@ -588,18 +696,19 @@ export default function HebrewStoryPartner() {
             fontSize: 16,
             fontFamily: "'Frank Ruhl Libre', serif",
             outline: "none",
+            opacity: aiDisabled ? 0.5 : 1,
           }}
         />
         <button
           onClick={() => send()}
-          disabled={loading}
+          disabled={loading || aiDisabled}
           style={{
-            background: loading ? PALETTE.sand : PALETTE.clay,
+            background: loading || aiDisabled ? PALETTE.sand : PALETTE.clay,
             color: PALETTE.paper,
             border: "none",
             borderRadius: 22,
             width: 50,
-            cursor: loading ? "default" : "pointer",
+            cursor: loading || aiDisabled ? "default" : "pointer",
             fontSize: 20,
           }}
         >
@@ -608,7 +717,7 @@ export default function HebrewStoryPartner() {
       </div>
 
       <div style={{ padding: "7px 12px", background: PALETTE.paperDeep, textAlign: "center", fontSize: 11.5, color: PALETTE.faint, fontFamily: "Georgia, serif" }}>
-        Tap any Hebrew word to get an explanation · type "explain" anytime
+        Tap any Hebrew word to get an explanation · type &quot;explain&quot; anytime
       </div>
 
       <style>{`
