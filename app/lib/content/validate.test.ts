@@ -83,6 +83,11 @@ describe('validateLesson', () => {
     l.sentences[0].tokens[1].rootId = 'zzz';
     expect(validateLesson(l, roots()).join('\n')).toContain('zzz');
   });
+  it('requires verify on a token that has rootId or binyan', () => {
+    const l = lesson();
+    delete l.sentences[0].tokens[1].verify;
+    expect(validateLesson(l, roots()).join('\n')).toContain('tokens[1].verify');
+  });
   it('flags an out-of-range answer', () => {
     const l = lesson();
     l.endCheck[0].answer = 5;
@@ -101,6 +106,19 @@ describe('releaseBarErrors', () => {
     const l = lesson();
     l.sentences[0].tokens[1].verify!.form = v('unverified');
     expect(releaseBarErrors(l, roots()).join('\n')).toContain('sentences[0].tokens[1]');
+  });
+});
+
+describe('releaseBarErrors (core claims)', () => {
+  it('flags an ai-checked token form', () => {
+    const l = lesson();
+    l.sentences[0].tokens[1].verify!.form = v('ai-checked');
+    expect(releaseBarErrors(l, roots()).join('\n')).toContain('tokens[1].verify.form');
+  });
+  it('flags an ai-checked root form', () => {
+    const rs = roots();
+    rs.get('spr')!.binyanim.piel![0].verify.form = v('ai-checked');
+    expect(releaseBarErrors(lesson(), rs).join('\n')).toContain('binyanim.piel[0]');
   });
 });
 

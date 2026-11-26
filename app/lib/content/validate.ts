@@ -131,7 +131,7 @@ export function validateLesson(l: unknown, roots: Map<string, RootEntry>): strin
       str(t, 'he', tp, errs);
       if (t.rootId !== undefined) checkRoot(t.rootId, `${tp}.rootId`);
       if (t.binyan !== undefined) oneOf(t, 'binyan', BINYANIM, tp, errs);
-      if (t.verify !== undefined) {
+      if (t.verify !== undefined || t.rootId !== undefined || t.binyan !== undefined) {
         const tv = obj(t.verify, `${tp}.verify`, errs);
         if (tv) for (const k of ['form', 'root', 'binyan']) verifyAt(tv, k, `${tp}.verify`, errs);
       }
@@ -200,16 +200,17 @@ export function validateCourse(c: unknown, lessonIds: Set<string>): string[] {
 }
 
 /**
- * A lesson may ship only when every token's form/root/binyan claim is checked.
+ * A lesson may ship only when every token's form/root/binyan claim is `verified` (ai-checked is not enough).
  * Meaning-level items (explanations, translations, glosses) may stay unverified.
  */
 export function releaseBarErrors(l: Lesson, roots: Map<string, RootEntry>): string[] {
   const errs: string[] = [];
   l.sentences.forEach((s, i) =>
     s.tokens.forEach((t, j) => {
+      if (t.rootId === undefined && t.binyan === undefined && t.verify === undefined) return; // plain word
       for (const k of ['form', 'root', 'binyan'] as const) {
-        if (t.verify?.[k].status === 'unverified')
-          errs.push(`sentences[${i}].tokens[${j}].verify.${k} is unverified ("${t.he}")`);
+        if (t.verify?.[k]?.status !== 'verified')
+          errs.push(`sentences[${i}].tokens[${j}].verify.${k} is not verified ("${t.he}")`);
       }
     }),
   );
@@ -220,8 +221,8 @@ export function releaseBarErrors(l: Lesson, roots: Map<string, RootEntry>): stri
     if (!r) continue;
     for (const [b, forms] of Object.entries(r.binyanim))
       forms?.forEach((f, i) => {
-        if (f.verify.form.status === 'unverified')
-          errs.push(`root ${id}.binyanim.${b}[${i}].verify.form is unverified ("${f.he}")`);
+        if (f.verify.form.status !== 'verified')
+          errs.push(`root ${id}.binyanim.${b}[${i}].verify.form is not verified ("${f.he}")`);
       });
   }
   return errs;

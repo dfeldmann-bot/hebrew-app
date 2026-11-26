@@ -39,4 +39,3 @@ describe('content/', () => {
       expect(l.id + '.json').toBe(f);
     });
 });
-
